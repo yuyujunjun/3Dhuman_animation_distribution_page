@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="Human Geometry Distribution for 3D Animation Generation. CVPR 2026.">
+  <meta name="keywords" content="Human, Geometry Distribution, 3D Animation, CVPR 2026">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human Geometry Distribution for 3D Animation Generation</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Human Geometry Distribution for 3D Animation Generation</h1>
+          <h2 class="subtitle is-4 publication-venue" style="margin-top:0.4em; color:#666;">CVPR 2026</h2>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://yuyujunjun.github.io">Xiangjun Tang</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://1zb.github.io/">Biao Zhang</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://peterwonka.net/">Peter Wonka</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>KAUST</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="https://cvpr.thecvf.com/virtual/2026/poster/38222"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- arXiv / Code buttons (uncomment when available) -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Notice for file:// users -->
+<div id="file-viewer-warning" style="display:none; background:#f6f8fa; color:#444; font-size:0.95em; font-weight:400; text-align:center; padding:7px 12px; margin:10px auto; max-width:960px; border-radius:5px; border:1px solid #e3e3e3;">
+  <span style="font-size:1.15em; vertical-align:middle;">&#9432;</span>
+  <span style="color:#d32f2f;">
+    The interactive 3D viewer below requires this page to be served over <code>http(s)://</code>.<br>
+    Please open it through GitHub Pages, or run a local server (e.g. <code>python -m http.server</code>) from this folder.
+  </span>
+</div>
+<script>
+  if (window.location.protocol === 'file:') {
+    var warn = document.getElementById("file-viewer-warning");
+    if (warn) warn.style.display = "block";
+  }
+</script>
+
+
+<!-- Interactive Point Cloud Viewer (lazy loaded on click) -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+
+    <div class="item item-pointcloud">
+
+      <!-- Placeholder shown until user clicks Load -->
+      <div id="viewer-placeholder"
+           style="width:100%; min-height:260px; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#f7f7f9; border-radius:8px; padding:36px 20px; gap:16px; border:1px solid #e3e3e3;">
+        <div style="font-size:1.6em; font-weight:600; color:#363636;">Interactive Point Cloud Animation</div>
+        <div style="font-size:1.0em; color:#555; text-align:center; max-width:560px; line-height:1.5;">
+          The viewer streams ~86 MB of compressed point-cloud data. Click below to start downloading — you'll see live progress, and the scene will render when it's ready.
+        </div>
+        <button id="loadViewerBtn"
+                style="padding:11px 22px; border-radius:6px; border:none; background:#363636; color:#fff; cursor:pointer; font-weight:600; font-size:1.0em;">
+          Load 3D Viewer (~86 MB)
+        </button>
+        <div id="loadProgressBox" style="display:none; width:90%; max-width:520px;">
+          <div id="progressText" style="text-align:center; margin-bottom:6px; color:#444; font-size:0.95em;">Preparing…</div>
+          <progress id="progressBar" value="0" max="100" style="width:100%; height:14px;"></progress>
+        </div>
+      </div>
+
+      <!-- Real viewer (hidden until loaded) -->
+      <div id="viewer-content" style="display:none;">
+        <div style="position:relative; width:100%; height:420px; display:flex; gap:12px; justify-content:center; align-items:flex-start; background:#ffffff; border-radius:8px; padding:10px;">
+          <!-- Left: static frame 0 -->
+          <div style="flex:1; min-width:280px; max-width:600px; height:400px; background:#202020; border-radius:6px; display:flex; justify-content:center; align-items:center; position:relative;">
+            <div id="pointcloud-container-static" style="width:100%; height:100%;"></div>
+            <div style="position:absolute; top:8px; left:8px; color:#fff; font-weight:600;">Static (Frame 0)</div>
+          </div>
+
+          <!-- Right: animated -->
+          <div style="flex:1; min-width:280px; max-width:600px; height:400px; background:#202020; border-radius:6px; display:flex; justify-content:center; align-items:center; position:relative;">
+            <div id="pointcloud-container-anim" style="width:100%; height:100%;"></div>
+            <button id="playPauseBtn" aria-pressed="false"
+              style="position:absolute; top:10px; right:10px; padding:8px 12px; border-radius:4px; border:none; background:rgba(255,255,255,0.9); cursor:pointer; font-weight:600;">
+              Pause
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-top:8px;">
+          <label style="color:#333; background:transparent; padding:6px 10px; border-radius:5px; font-weight:600;">
+            Point Size:
+            <input type="range" id="sizeSlider" min="0.1" max="5" value="0.1" style="vertical-align:middle;">
+          </label>
+        </div>
+
+        <h2 class="subtitle has-text-centered">
+          Interactive Point Cloud Animation. Only a short clip with under-sampled points is shown due to file size limits.
+        </h2>
+      </div>
+
+      <div class="hero-body">
+        <video id="teaser" autoplay muted loop playsinline height="100%">
+          <source src="./static/videos/teaser.mp4" type="video/mp4">
+        </video>
+        <h2 class="subtitle has-text-centered">
+          We represent human geometry as point distributions and generate natural clothing dynamics across diverse avatars.
+        </h2>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<script>
+// ============================================================================
+// Lazy 3D viewer loader: nothing heavy is fetched until user clicks the button.
+// ============================================================================
+(function(){
+  const loadBtn          = document.getElementById('loadViewerBtn');
+  const placeholder      = document.getElementById('viewer-placeholder');
+  const viewerContent    = document.getElementById('viewer-content');
+  const loadProgressBox  = document.getElementById('loadProgressBox');
+  const progressBar      = document.getElementById('progressBar');
+  const progressText     = document.getElementById('progressText');
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensurePako() {
+    if (window.pako) return window.pako;
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js');
+    if (!window.pako) throw new Error('pako failed to load');
+    return window.pako;
+  }
+
+  async function ensureZstdDecoder() {
+    if (window.__ZSTD_DECODER__) return window.__ZSTD_DECODER__;
+    const candidates = [
+      'https://unpkg.com/zstd-codec@0.1.0/bin/zstd-codec.js',
+      'https://cdn.jsdelivr.net/gh/cedric-hub/zstd-codec@master/bin/zstd-codec.js'
+    ];
+    for (const src of candidates) {
+      try {
+        await loadScript(src);
+        if (typeof ZstdCodec !== 'undefined') {
+          window.__ZSTD_DECODER__ = await new Promise(res => {
+            ZstdCodec.run((z) => {
+              const simple = new z.Simple();
+              res({ decompress(u8) { return simple.decompress(u8); } });
+            });
+          });
+          return window.__ZSTD_DECODER__;
+        }
+      } catch (_) { /* try next */ }
+    }
+    return null;
+  }
+
+  function parsePNQTFromBuffer(rawBuf, offset, length) {
+    const dv = new DataView(rawBuf, offset, length);
+    let localOffset = 0;
+    const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
+    localOffset += 4;
+    if (magic !== 'PNQT') return null;
+    const numPoints = dv.getUint32(localOffset, true); localOffset += 4;
+    const min_x = dv.getFloat32(localOffset, true); localOffset += 4;
+    const min_y = dv.getFloat32(localOffset, true); localOffset += 4;
+    const min_z = dv.getFloat32(localOffset, true); localOffset += 4;
+    const max_x = dv.getFloat32(localOffset, true); localOffset += 4;
+    const max_y = dv.getFloat32(localOffset, true); localOffset += 4;
+    const max_z = dv.getFloat32(localOffset, true); localOffset += 4;
+
+    const quant = new Uint16Array(rawBuf, offset + localOffset, numPoints * 3);
+    const positions = new Float32Array(numPoints * 3);
+    const QUANT_MAX = 65535;
+    const rangeX = max_x - min_x, rangeY = max_y - min_y, rangeZ = max_z - min_z;
+    for (let i = 0; i < numPoints; i++) {
+      positions[i*3+0] = min_x + (quant[i*3+0] / QUANT_MAX) * rangeX;
+      positions[i*3+1] = min_y + (quant[i*3+1] / QUANT_MAX) * rangeY;
+      positions[i*3+2] = min_z + (quant[i*3+2] / QUANT_MAX) * rangeZ;
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geom;
+  }
+
+  function fmtMB(bytes) { return (bytes / 1024 / 1024).toFixed(1); }
+
+  async function streamFetchWithProgress(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Failed to fetch ' + url + ': ' + response.status);
+    const total = +response.headers.get('Content-Length') || 0;
+    const reader = response.body.getReader();
+    const chunks = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (total) {
+        const pct = Math.floor(received / total * 100);
+        progressBar.value = pct;
+        progressText.textContent = 'Downloading… ' + pct + '%  (' + fmtMB(received) + ' / ' + fmtMB(total) + ' MB)';
+      } else {
+        progressText.textContent = 'Downloading… ' + fmtMB(received) + ' MB';
+      }
+    }
+    const merged = new Uint8Array(received);
+    let pos = 0;
+    for (const c of chunks) { merged.set(c, pos); pos += c.length; }
+    return merged.buffer;
+  }
+
+  async function loadEverythingAndInit() {
+    try {
+      // 1. Three.js libraries (only fetched on click)
+      progressText.textContent = 'Loading libraries…';
+      progressBar.removeAttribute('value');
+      await loadScript('https://cdn.jsdelivr.net/npm/three@0.110/build/three.min.js');
+      await loadScript('https://cdn.jsdelivr.net/npm/three@0.110/examples/js/controls/OrbitControls.js');
+
+      // 2. Frame index
+      progressText.textContent = 'Loading frame index…';
+      const idxRes = await fetch('./bin_frames_compressed/frames.json');
+      if (!idxRes.ok) throw new Error('Failed to load frames.json');
+      const framesIndex = await idxRes.json();
+
+      // 3. Stream the bin file with live progress
+      progressBar.value = 0;
+      progressText.textContent = 'Downloading… 0%';
+      const containerFile = framesIndex.file;
+      const ab = await streamFetchWithProgress('./bin_frames_compressed/' + containerFile);
+
+      // 4. Decompress
+      progressBar.removeAttribute('value');
+      progressText.textContent = 'Decompressing…';
+      const compression = (framesIndex.compression || framesIndex.compression_available || '').toLowerCase();
+      let rawUint8;
+      if (compression === 'zstd') {
+        const dec = await ensureZstdDecoder();
+        if (!dec) throw new Error('zstd codec not available in client');
+        rawUint8 = dec.decompress(new Uint8Array(ab));
+      } else {
+        const pako = await ensurePako();
+        rawUint8 = pako.ungzip(new Uint8Array(ab));
+      }
+
+      // 5. Parse frames
+      progressText.textContent = 'Parsing frames…';
+      await new Promise(r => setTimeout(r, 0)); // yield to repaint
+      const rawBuf = rawUint8.buffer;
+      const frameGeometries = [];
+      for (const fm of framesIndex.frames) {
+        try {
+          const g = parsePNQTFromBuffer(rawBuf, fm.offset, fm.length);
+          if (g) frameGeometries.push(g);
+        } catch (e) { console.warn('parse frame failed', fm.index, e); }
+      }
+      if (frameGeometries.length === 0) throw new Error('No frames parsed');
+
+      // 6. Reveal the viewer and start rendering
+      placeholder.style.display = 'none';
+      viewerContent.style.display = 'block';
+      initViewer(frameGeometries);
+
+    } catch (err) {
+      console.error(err);
+      progressText.textContent = 'Failed to load: ' + (err.message || err);
+      progressText.style.color = '#d32f2f';
+    }
+  }
+
+  loadBtn.addEventListener('click', () => {
+    loadBtn.style.display = 'none';
+    loadProgressBox.style.display = 'block';
+    loadEverythingAndInit();
+  });
+
+
+  // --------------------------------------------------------------------------
+  // Three.js scene init (assumes THREE is loaded and frameGeometries is ready)
+  // --------------------------------------------------------------------------
+  function initViewer(frameGeometries) {
+    const containerStatic = document.getElementById('pointcloud-container-static');
+    const containerAnim   = document.getElementById('pointcloud-container-anim');
+
+    const rendererStatic = new THREE.WebGLRenderer({antialias:true});
+    rendererStatic.setSize(containerStatic.clientWidth, containerStatic.clientHeight);
+    containerStatic.appendChild(rendererStatic.domElement);
+
+    const rendererAnim = new THREE.WebGLRenderer({antialias:true});
+    rendererAnim.setSize(containerAnim.clientWidth, containerAnim.clientHeight);
+    containerAnim.appendChild(rendererAnim.domElement);
+
+    const sceneStatic = new THREE.Scene(); sceneStatic.background = new THREE.Color(0xFFFFFF);
+    const sceneAnim   = new THREE.Scene(); sceneAnim.background   = new THREE.Color(0xFFFFFF);
+
+    const cameraStatic = new THREE.PerspectiveCamera(60, containerStatic.clientWidth/containerStatic.clientHeight, 0.01, 5);
+    cameraStatic.position.set(0,0,1.9);
+    const cameraAnim = new THREE.PerspectiveCamera(60, containerAnim.clientWidth/containerAnim.clientHeight, 0.01, 5);
+    cameraAnim.position.set(0,0,1.9);
+
+    const controlsStatic = new THREE.OrbitControls(cameraStatic, rendererStatic.domElement);
+    controlsStatic.enableDamping = true; controlsStatic.dampingFactor = 0.05;
+    controlsStatic.target.set(0,-0.3,0); controlsStatic.update();
+
+    const controlsAnim = new THREE.OrbitControls(cameraAnim, rendererAnim.domElement);
+    controlsAnim.enableDamping = true; controlsAnim.dampingFactor = 0.05;
+    controlsAnim.target.set(0,-0.3,0); controlsAnim.update();
+
+    const MIN_CAMERA_DISTANCE = 1.5, MAX_CAMERA_DISTANCE = 2.3;
+    controlsStatic.minDistance = MIN_CAMERA_DISTANCE; controlsStatic.maxDistance = MAX_CAMERA_DISTANCE;
+    controlsAnim.minDistance   = MIN_CAMERA_DISTANCE; controlsAnim.maxDistance   = MAX_CAMERA_DISTANCE;
+
+    const _clampDir = new THREE.Vector3();
+    function clampCameraDistanceFor(camera, target){
+      _clampDir.copy(camera.position).sub(target);
+      const d = _clampDir.length();
+      if (d < MIN_CAMERA_DISTANCE) {
+        _clampDir.setLength(MIN_CAMERA_DISTANCE);
+        camera.position.copy(target).add(_clampDir);
+      } else if (d > MAX_CAMERA_DISTANCE) {
+        _clampDir.setLength(MAX_CAMERA_DISTANCE);
+        camera.position.copy(target).add(_clampDir);
+      }
+    }
+
+    let isPaused = false;
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    if (playPauseBtn) {
+      playPauseBtn.addEventListener('click', ()=>{
+        isPaused = !isPaused;
+        playPauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+        playPauseBtn.setAttribute('aria-pressed', String(isPaused));
+      });
+    }
+    window.addEventListener('keydown', (e)=>{
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (playPauseBtn) playPauseBtn.click();
+      }
+    });
+
+    const pointMaterialStatic = new THREE.PointsMaterial({size:0.001, vertexColors:false, color:0xffffff});
+    const pointMaterialAnim   = new THREE.PointsMaterial({size:0.001, vertexColors:false, color:0xffffff});
+
+    const depthTargetStatic = new THREE.WebGLRenderTarget(containerStatic.clientWidth, containerStatic.clientHeight);
+    depthTargetStatic.texture.minFilter = THREE.NearestFilter;
+    depthTargetStatic.texture.magFilter = THREE.NearestFilter;
+    depthTargetStatic.texture.generateMipmaps = false;
+    depthTargetStatic.depthTexture = new THREE.DepthTexture(containerStatic.clientWidth, containerStatic.clientHeight, THREE.UnsignedShortType);
+    depthTargetStatic.depthTexture.type = THREE.UnsignedShortType;
+
+    const depthTargetAnim = new THREE.WebGLRenderTarget(containerAnim.clientWidth, containerAnim.clientHeight);
+    depthTargetAnim.texture.minFilter = THREE.NearestFilter;
+    depthTargetAnim.texture.magFilter = THREE.NearestFilter;
+    depthTargetAnim.texture.generateMipmaps = false;
+    depthTargetAnim.depthTexture = new THREE.DepthTexture(containerAnim.clientWidth, containerAnim.clientHeight, THREE.UnsignedShortType);
+    depthTargetAnim.depthTexture.type = THREE.UnsignedShortType;
+
+    let pointsStatic = new THREE.Points(frameGeometries[0], pointMaterialStatic);
+    sceneStatic.add(pointsStatic);
+    let pointsAnim = new THREE.Points(frameGeometries[1] || frameGeometries[0], pointMaterialAnim);
+    sceneAnim.add(pointsAnim);
+
+    const quadGeo = new THREE.PlaneGeometry(2,2);
+    const postVertexShader = `
+      varying vec2 vUv;
+      void main(){ vUv = uv; gl_Position = vec4(position,1.0); }
+    `;
+    const postFragmentShader = `
+      varying vec2 vUv;
+      uniform sampler2D tDepth;
+      uniform float cameraNear;
+      uniform float cameraFar;
+      uniform vec2 resolution;
+      uniform mat4 invProjection;
+      vec3 getViewPos(vec2 uv) {
+        float d_raw = texture2D(tDepth, uv).x;
+        if (d_raw >= 0.9999) return vec3(0.0, 0.0, -cameraFar);
+        vec4 clip = vec4(uv * 2.0 - 1.0, d_raw * 2.0 - 1.0, 1.0);
+        vec4 view = invProjection * clip;
+        view /= view.w;
+        return view.xyz;
+      }
+      void main(){
+        vec2 dx = vec2(1.0 / resolution.x, 0.0);
+        vec2 dy = vec2(0.0, 1.0 / resolution.y);
+        vec3 p  = getViewPos(vUv);
+        vec3 pr = getViewPos(vUv + dx);
+        vec3 pu = getViewPos(vUv + dy);
+        vec3 d1 = pr - p;
+        vec3 d2 = pu - p;
+        vec3 n = normalize(cross(d1, d2));
+        if (length(n) == 0.0) n = vec3(0.0, 0.0, 1.0);
+        vec3 color = n * 0.5 + 0.5;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const postMaterialStatic = new THREE.ShaderMaterial({
+      uniforms:{
+        tDepth: {value: depthTargetStatic.depthTexture},
+        cameraNear: {value: cameraStatic.near},
+        cameraFar: {value: cameraStatic.far},
+        resolution: {value: new THREE.Vector2(containerStatic.clientWidth, containerStatic.clientHeight)},
+        invProjection: {value: new THREE.Matrix4().getInverse(cameraStatic.projectionMatrix)}
+      },
+      vertexShader: postVertexShader,
+      fragmentShader: postFragmentShader
+    });
+
+    const postMaterialAnim = new THREE.ShaderMaterial({
+      uniforms:{
+        tDepth: {value: depthTargetAnim.depthTexture},
+        cameraNear: {value: cameraAnim.near},
+        cameraFar: {value: cameraAnim.far},
+        resolution: {value: new THREE.Vector2(containerAnim.clientWidth, containerAnim.clientHeight)},
+        invProjection: {value: new THREE.Matrix4().getInverse(cameraAnim.projectionMatrix)}
+      },
+      vertexShader: postVertexShader,
+      fragmentShader: postFragmentShader
+    });
+
+    const postSceneStatic = new THREE.Scene();
+    const postCameraStatic = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    postSceneStatic.add(new THREE.Mesh(quadGeo, postMaterialStatic));
+
+    const postSceneAnim = new THREE.Scene();
+    const postCameraAnim = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    postSceneAnim.add(new THREE.Mesh(quadGeo, postMaterialAnim));
+
+    let currentFrame = 0;
+    const fps = 10;
+    const interval = 1000/fps;
+    let lastTime = performance.now();
+    let accumulator = 0;
+
+    const sizeSlider = document.getElementById('sizeSlider');
+    sizeSlider.addEventListener('input', ()=>{
+      const s = parseFloat(sizeSlider.value)/100;
+      pointMaterialStatic.size = s;
+      pointMaterialAnim.size = s;
+    });
+
+    function animate(time){
+      requestAnimationFrame(animate);
+      const delta = time - lastTime;
+      lastTime = time;
+
+      clampCameraDistanceFor(cameraStatic, controlsStatic.target);
+      clampCameraDistanceFor(cameraAnim, controlsAnim.target);
+
+      if (!isPaused) {
+        accumulator += delta;
+        while(accumulator >= interval){
+          currentFrame = (currentFrame+1)%frameGeometries.length;
+          pointsAnim.geometry = frameGeometries[currentFrame];
+          accumulator -= interval;
+        }
+      } else {
+        accumulator = 0;
+      }
+
+      controlsStatic.update();
+      controlsAnim.update();
+
+      rendererStatic.setRenderTarget(depthTargetStatic);
+      rendererStatic.render(sceneStatic, cameraStatic);
+      rendererStatic.setRenderTarget(null);
+      rendererStatic.render(postSceneStatic, postCameraStatic);
+
+      rendererAnim.setRenderTarget(depthTargetAnim);
+      rendererAnim.render(sceneAnim, cameraAnim);
+      rendererAnim.setRenderTarget(null);
+      rendererAnim.render(postSceneAnim, postCameraAnim);
+    }
+
+    animate(performance.now());
+
+    window.addEventListener('resize', ()=>{
+      cameraStatic.aspect = containerStatic.clientWidth/containerStatic.clientHeight;
+      cameraStatic.updateProjectionMatrix();
+      rendererStatic.setSize(containerStatic.clientWidth, containerStatic.clientHeight);
+      depthTargetStatic.setSize(containerStatic.clientWidth, containerStatic.clientHeight);
+      postMaterialStatic.uniforms.resolution.value.set(containerStatic.clientWidth, containerStatic.clientHeight);
+      postMaterialStatic.uniforms.invProjection.value.copy(new THREE.Matrix4().getInverse(cameraStatic.projectionMatrix));
+
+      cameraAnim.aspect = containerAnim.clientWidth/containerAnim.clientHeight;
+      cameraAnim.updateProjectionMatrix();
+      rendererAnim.setSize(containerAnim.clientWidth, containerAnim.clientHeight);
+      depthTargetAnim.setSize(containerAnim.clientWidth, containerAnim.clientHeight);
+      postMaterialAnim.uniforms.resolution.value.set(containerAnim.clientWidth, containerAnim.clientHeight);
+      postMaterialAnim.uniforms.invProjection.value.copy(new THREE.Matrix4().getInverse(cameraAnim.projectionMatrix));
+    });
+  }
+})();
+</script>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Generating realistic human geometry animations remains a challenging task, as it requires modeling natural clothing dynamics with fine-grained geometric details under limited data.
+          </p>
+          <p>
+            To address these challenges, we propose two novel designs. First, we propose a compact distribution-based latent representation that enables efficient and high-quality geometry generation. We improve upon previous work by establishing a more uniform mapping between SMPL and avatar geometries. Second, we introduce a generative animation model that fully exploits the diversity of limited motion data. We focus on short-term transitions while maintaining long-term consistency through an identity-conditioned design. These two designs formulate our method as a two-stage framework: the first stage learns a latent space, while the second learns to generate animations within this latent space.
+          </p>
+          <p>
+            We conducted experiments on both our latent space and animation model. We demonstrate that our latent space produces high-fidelity human geometry surpassing previous methods (90% lower Chamfer Dist.). The animation model synthesizes diverse animations with detailed and natural dynamics (2.2&times; higher user study score), achieving the best results across all evaluation metrics.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Video Gallery -->
+<style>
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.gallery-item {
+  background:#111;
+  padding:6px;
+  border-radius:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.gallery-item video {
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:4px;
+  cursor:default;
+  background:#000;
+}
+@media (max-width:480px){
+  .gallery-grid { gap:8px; }
+  .gallery-item { padding:4px; }
+}
+</style>
+
+<section class="section" id="video-gallery">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Video Gallery</h2>
+    <div id="gallery-grid" class="gallery-grid" aria-live="polite">
+      <div class="gallery-item"><video src="./static/videos/2.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/3.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/4.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/5.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/7.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/8.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/9.mp4"  preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/10.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/11.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/12.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/13.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/14.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/15.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/16.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/17.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/18.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/19.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/20.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/21.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+      <div class="gallery-item"><video src="./static/videos/22.mp4" preload="metadata" controls muted playsinline autoplay loop></video></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- BibTeX Citation -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">Citation</h2>
+    <p>If you find our work useful, please consider citing:</p>
+    <pre><code>@inproceedings{tang2026human,
+  title     = {Human Geometry Distribution for 3D Animation Generation},
+  author    = {Tang, Xiangjun and Zhang, Biao and Wonka, Peter},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2026}
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Website template adapted from
+        <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+        This page is licensed under a
+        <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
+          Creative Commons Attribution-ShareAlike 4.0 International License
+        </a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+
+</body>
+</html>
